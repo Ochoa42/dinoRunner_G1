@@ -52,11 +52,11 @@ class Dinosaur():
 
     def update(self, user_input):
             
-            if self.dino_jump():
+            if self.dino_jump:
                 self.jump()
-            if self.dino_duck():
+            if self.dino_duck:
                 self.duck()
-            if self.dino_run():
+            if self.dino_run:
                 self.run()
 
             
