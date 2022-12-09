@@ -4,12 +4,22 @@ from dino_runner.components.dinosaur.dinosaur import Dinosaur
 from dino_runner.components.obstacle.obstacleManager import ObstacleManager
 from dino_runner.components.score_menu.text_utils import *
 from dino_runner.components.player_hearts.player_heart_manager import PlayerHeartManager
+from dino_runner.components.cloud.cloud import Cloud 
+from dino_runner.components.powerup.powerupmanager import PowerUpManger
+
+
+
+
+
+
+
 
 
 
 class Game:
     def __init__(self):
         pygame.init()
+        pygame.mixer.init()
         pygame.display.set_caption(TITLE)
         pygame.display.set_icon(ICON)
         self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT)) #-----> agregamos el ancho y largo que qeremos la ventana
@@ -20,6 +30,7 @@ class Game:
         self.y_pos_bg = 380
         self.player = Dinosaur()
         self.obstacle_manager = ObstacleManager()
+        self.cloud_manager = Cloud() ## cloub clase instanciada (observacion)
 
         self.points = 0
         self.death_count = 0
@@ -28,10 +39,19 @@ class Game:
         self.show_text = False
 
 
+        self.power_up_manager = PowerUpManger()
+        pygame.mixer.music.load('dino_runner/assets/music_background/music.mp3')
+
+
     def run(self):
+
         self.obstacle_manager.reset_obstacle(self)
-        self.player_heart_manager.reduce_heart()
+        self.player_heart_manager.reset_hearts()  
+        self.power_up_manager.reset_power_ups(self.points)
+        
         self.playing = True # ----> ponemos en play el juego
+         
+        pygame.mixer.music.play()
         while self.playing:
             self.events()
             self.update()
@@ -48,7 +68,10 @@ class Game:
     def update(self):
         user_input =pygame.key.get_pressed()
         self.obstacle_manager.update(self)
+        self.cloud_manager.update(self)
         self.player.update(user_input)
+        self.power_up_manager.update(self.points, self.game_speed, self.player)
+
 
     def draw(self):
         self.clock.tick(FPS)    # cada cuanto milisegundo queremos q se dibuje nuestra imagen
@@ -58,6 +81,9 @@ class Game:
         self.obstacle_manager.draw(self.screen)
         self.score()
         self.player_heart_manager.draw(self.screen)
+        self.cloud_manager.draw(self.screen) ### nube craw (observacion)
+        self.power_up_manager.draw(self.screen)
+
 
         pygame.display.update() # 
         pygame.display.flip()  #---> actualizar pantalla
@@ -81,7 +107,8 @@ class Game:
         
         score,score_rect = get_score_element(self.points)
         self.screen.blit(score,score_rect)
-
+        self.player.check_invisivility(self.screen)
+    
     def show_menu(self):
         self.running = True
 
@@ -103,10 +130,10 @@ class Game:
         elif death_count>0:
             text, text_rect = get_centered_message('Press any key to Restart')
             score, score_rect = get_centered_message('Your score: ' + str(self.points),heigth = half_screen_height + 50  )
-            heart, heart_score = get_centered_message('tu vida es: ' + str(self.player_heart_manager.heart_count),heigth = half_screen_height + 100)
+            heart, heart_score = get_centered_message('your life is: ' + str(self.player_heart_manager.heart_count),heigth = half_screen_height + 100)
             self.screen.blit(score, score_rect)
             self.screen.blit(text,text_rect)
-            self.screen.blit(heart,heart_score)
+            self.screen.blit(heart,heart_score) 
 
     def handle_key_events_on_menu(self):
         for event in pygame.event.get():
@@ -116,6 +143,7 @@ class Game:
                 self.playing = False
                 pygame.display.quit()
                 pygame.quit()
+                pygame.mixer.music.pause()
                 exit()
             if (event.type == pygame.KEYDOWN):
                 self.run()
